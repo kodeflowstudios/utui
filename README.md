@@ -239,17 +239,17 @@ Project Link: [https://github.com/kodeflowstudios/utui](https://github.com/githu
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/kodeflowstudios/utui.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/kodeflowstudios/utui.svg
 [contributors-url]: https://github.com/kodeflowstudios/utui/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/kodeflowstudios/utui.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/kodeflowstudios/utui.svg
 [forks-url]: https://github.com/kodeflowstudios/utui/network/members
-[stars-shield]: https://img.shields.io/github/stars/kodeflowstudios/utui.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/kodeflowstudios/utui.svg
 [stars-url]: https://github.com/kodeflowstudios/utui/stargazers
-[issues-shield]: https://img.shields.io/github/issues/kodeflowstudios/utui.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/kodeflowstudios/utui.svg
 [issues-url]: https://github.com/kodeflowstudios/utui/issues
-[license-shield]: https://img.shields.io/github/license/kodeflowstudios/utui.svg?style=for-the-badge
-[license-url]: https://github.com/kodeflowstudios/utui/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[license-shield]: https://img.shields.io/github/license/kodeflowstudios/utui.svg
+[license-url]: https://github.com/kodeflowstudios/utui/blob/master/LICENSE
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?logo=linkedin&colorB=555
 [linkedin-url]: www.linkedin.com/in/ahmed-elkadii
 [product-screenshot]: images/screenshot.png
 <!-- Shields.io badges. You can a comprehensive list with many more badges at: https://github.com/inttter/md-badges -->
