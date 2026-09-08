@@ -201,7 +201,7 @@ Don't forget to give the project a star! Thanks again!
 ### Top contributors:
 
 <a href="https://github.com/kodeflowstudios/utui/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=kodeflowstudios/utui" alt="contrib.rocks image" />
+  <img src="https://contrib.rocks/image?repo=kodeflowstudios/utui" alt="Contributor preview unavailable..." />
 </a>
 
 
