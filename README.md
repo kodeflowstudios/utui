@@ -76,6 +76,8 @@ Here's why you should use it:
 - Add and manage commands (coming soon)
 - Create command templates (coming soon)
 
+⚠️ This project is an independent, open-source project and is not affiliated with or endorsed by Unity Software Inc.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
