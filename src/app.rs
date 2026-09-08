@@ -1173,6 +1173,7 @@ impl App {
         self.list_state.select(self.selected_index);
         self.dialogue.close();
         self.input.step = InputStep::Name;
+        self.list_state.select_first();
     }
 
     fn paste_clipboard(&mut self) {
