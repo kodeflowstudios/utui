@@ -24,7 +24,7 @@
 ⚠️ This project is an independent, open-source project and is not affiliated with or endorsed by Unity Software Inc.
     <br />
     <br />
-    <a href="https://github.com/kodeflowstudios/utui">View Demo</a>
+    <a href="https://kodeflowstudios.com">KodeFlow Studios</a>
     &middot;
     <a href="https://github.com/kodeflowstudios/utui/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
@@ -76,15 +76,13 @@ Here's why you should use it:
 - Add and manage commands (coming soon)
 - Create command templates (coming soon)
 
-⚠️ This project is an independent, open-source project and is not affiliated with or endorsed by Unity Software Inc.
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
 ### Built With
 
-* [![Rust][Rust]][Rust-url]
+[![Rust][Rust]][Rust-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
