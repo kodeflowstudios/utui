@@ -80,9 +80,7 @@ Here's why you should use it:
 
 
 
-### Built With
-
-[![Rust][Rust]][Rust-url]
+### Built With [![Rust][Rust]][Rust-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
