@@ -28,7 +28,7 @@
     &middot;
     <a href="https://github.com/kodeflowstudios/utui/issues/new?labels=bug&template=bug-report.md">Report Bug</a>
     &middot;
-    <a href="https://github.com/kodeflowstudios/utui/issues/new?labels=improvement&template=feature-request.md">Request Feature</a>
+    <a href="https://github.com/kodeflowstudios/utui/issues/new?labels=feature&template=feature-request.md">Request Feature</a>
   </p>
 </div>
 
