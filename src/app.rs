@@ -860,7 +860,8 @@ impl App {
                     self.delete_selected(with_dir);
                 }
             }
-            Dialogue::Error(_) | Dialogue::Info(_) => {
+            Dialogue::Info(_) => (),
+            Dialogue::Error(_) => {
                 if self.dialogue.return_to != Dialogue::None { 
                     self.dialogue.current = self.dialogue.return_to.clone();
                     return; 
