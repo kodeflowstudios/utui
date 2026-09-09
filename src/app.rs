@@ -859,6 +859,9 @@ impl App {
                 if self.dialogue.selection == DialogueSelection::Ok {
                     self.delete_selected(with_dir);
                 }
+                else {
+                    self.reset_after_dialogue();
+                }
             }
             Dialogue::Info(_) => (),
             Dialogue::Error(_) => {
