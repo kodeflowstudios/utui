@@ -10,3 +10,8 @@
 ### Added or Changed
 - Disabled cancel action while project is being created.
 - Fixed cancel action for project delete.
+
+## v1.0.6
+
+### Added or Changed
+- Changed main colours to blue

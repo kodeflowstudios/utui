@@ -186,12 +186,12 @@ pub fn render_help_menu(frame: &mut Frame, help_state: &mut HelpState) {
             HelpRow::Entry(entry) => {
                 let is_selected = Some(row_idx) == entry_positions.get(help_state.selected).copied();
                 let key_style = if is_selected {
-                    Style::default().fg(Color::Black).bg(Color::Yellow).bold()
+                    Style::default().fg(Color::Black).bg(Color::Blue).bold()
                 } else {
-                    Style::default().fg(Color::Yellow).bold()
+                    Style::default().fg(Color::Blue).bold()
                 };
                 let desc_style = if is_selected {
-                    Style::default().fg(Color::Black).bg(Color::Yellow)
+                    Style::default().fg(Color::Black).bg(Color::Blue)
                 } else {
                     Style::default()
                 };
@@ -222,7 +222,7 @@ pub fn render_help_menu(frame: &mut Frame, help_state: &mut HelpState) {
 
     let detail_paragraph = match detail_entry {
         Some(entry) => Paragraph::new(vec![
-            Line::from(Span::styled(entry.key, Style::default().fg(Color::Yellow).bold())),
+            Line::from(Span::styled(entry.key, Style::default().fg(Color::Blue).bold())),
             Line::from(Span::styled(entry.desc, Style::default().bold())),
             Line::from(""),
             Line::from(entry.detail),
@@ -235,9 +235,9 @@ pub fn render_help_menu(frame: &mut Frame, help_state: &mut HelpState) {
     frame.render_widget(detail_paragraph, columns[1]);
 
     let footer = Line::from(vec![
-        Span::styled("j/k", Style::default().fg(Color::Yellow).bold()),
+        Span::styled("j/k", Style::default().fg(Color::Blue).bold()),
         Span::from(" Navigate   "),
-        Span::styled("?/Esc", Style::default().fg(Color::Yellow).bold()),
+        Span::styled("?/Esc", Style::default().fg(Color::Blue).bold()),
         Span::from(" Close"),
     ])
     .centered();

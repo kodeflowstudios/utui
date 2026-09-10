@@ -255,12 +255,12 @@ fn popup_dialogue(
         ])
         .split(chunks[3]);
         let ok_style = if app.dialogue.selection == DialogueSelection::Ok {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
         let cancel_style = if app.dialogue.selection == DialogueSelection::Cancel {
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD)
         } else {
             Style::default()
         };
@@ -371,7 +371,7 @@ fn help_entries(app: &App) -> Vec<(&'static str, &'static str)> {
 
 fn render_help_text(app: &App, frame: &mut Frame, area: Rect) {
     let key_style = Style::default()
-        .fg(Color::Yellow)
+        .fg(Color::Blue)
         .add_modifier(Modifier::BOLD);
     let hint_style = Style::default().fg(Color::DarkGray);
     let sep_style = Style::default().fg(Color::DarkGray);
