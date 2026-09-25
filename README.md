@@ -247,7 +247,7 @@ Project Link: [https://github.com/kodeflowstudios/utui](https://github.com/githu
 [issues-shield]: https://img.shields.io/github/issues/kodeflowstudios/utui.svg?style=for-the-badge
 [issues-url]: https://github.com/kodeflowstudios/utui/issues
 [license-shield]: https://img.shields.io/github/license/kodeflowstudios/utui.svg?style=for-the-badge
-[license-url]: https://github.com/kodeflowstudios/utui/blob/master/LICENSE
+[license-url]: https://github.com/kodeflowstudios/utui/blob/main/LICENSE
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: www.linkedin.com/in/ahmed-elkadii
 [product-screenshot]: images/screenshot.png
