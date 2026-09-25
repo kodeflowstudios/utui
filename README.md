@@ -159,7 +159,7 @@ utui --version
 utui
 ```
 
-Refere to the help menu inside of UTUI for more information.
+Refer to the help menu inside of UTUI for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
