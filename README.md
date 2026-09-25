@@ -12,10 +12,8 @@
 <br />
 <div align="center">
   <a href="https://github.com/kodeflowstudios/utui">
-    <img src="images/logo.png" alt="Logo" width="200" height="200">
+    <img src="images/logo.png" alt="Logo" width="300" height="300">
   </a>
-
-<h3 align="center">UTUI</h3>
 
   <p align="center">
     An awesome TUI interface for Unity's Unity CLI command line tool.
