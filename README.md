@@ -11,8 +11,8 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://kodeflowstudios.com/work/#utui">
-    <img src="images/logo.png" alt="Logo" width="300" height="300">
+  <a href="images/logo.svg">
+    <img src="images/logo.svg" alt="Logo" width="300" height="300">
   </a>
 
   <p align="center">
