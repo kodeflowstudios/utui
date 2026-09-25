@@ -217,7 +217,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@kodeflowstudios](https://x.com/kodeflowstudios) - contact@kodeflowstudios.com
+KodeFlow Studios - [@kodeflowstudios](https://x.com/kodeflowstudios) - contact@kodeflowstudios.com
 
 Project Link: [https://github.com/kodeflowstudios/utui](https://github.com/github_username/repo_name)
 
