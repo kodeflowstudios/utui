@@ -12,7 +12,7 @@
 <br />
 <div align="center">
   <a href="images/logo.svg">
-    <img src="images/logo.svg" alt="Logo" width="200" height="100">
+    <img src="images/logo.svg" alt="Logo" width="600" height="300">
   </a>
 
   <p align="center">
