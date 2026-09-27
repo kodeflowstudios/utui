@@ -1,10 +1,11 @@
-use ratatui::Frame;
-use ratatui::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui::layout::Constraint::Length;
+use ratatui::{Frame, symbols};
+use ratatui::layout::{Alignment, Constraint, Layout, Offset, Rect};
 use ratatui::style::{Color, Modifier, Style, Stylize};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, BorderType, Borders, Clear, List, ListState, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap};
+use ratatui::widgets::{Block, BorderType, Borders, Clear, List, ListState, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Tabs, Wrap};
 
-use crate::app::{App, Screen, fuzzy_filter_sorted};
+use crate::app::{App, Tab, fuzzy_filter_sorted};
 use crate::dialogue::{Dialogue, DialogueSelection};
 use crate::help::render_help_menu;
 use crate::input::InputStep;
@@ -41,6 +42,12 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     if app.show_help {
         render_help_menu(frame, &mut app.help_state);
     }
+    
+    let tabs = vec!["(1) Projects", "(2) Editors"];
+    let tabs_width = tabs
+        .iter()
+        .map(|l| l.len() as u16 + 3)
+        .sum::<u16>();
 
     match &app.dialogue.current {
         Dialogue::DeleteConfirm { with_dir } => {
@@ -117,8 +124,8 @@ pub fn render(frame: &mut Frame, app: &mut App) {
             _ => {}
         },
         Dialogue::None => {
-            match app.screen {
-                Screen::ProjectList => {
+            match app.tab {
+                Tab::ProjectList => {
                     if app.tasks.projects.is_some() {
                         app.dialogue.current = Dialogue::Info(String::new());
                     } else if app.list_items.is_empty() {
@@ -134,9 +141,10 @@ pub fn render(frame: &mut Frame, app: &mut App) {
                         frame.render_widget(paragraph, middle);
                     } else {
                         render_list(frame, middle, &mut app.list_state, app.list_items.clone(), "Projects", app.proj_expanded);
+                        render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     }
                 },
-                Screen::EditorList => {
+                Tab::EditorList => {
                     if app.tasks.all_editors.is_some() {
                         app.dialogue.current = Dialogue::Info(String::new());
                     } else if app.list_items.is_empty() {
@@ -151,9 +159,10 @@ pub fn render(frame: &mut Frame, app: &mut App) {
                         frame.render_widget(paragraph, middle);
                     } else {
                         render_list(frame, middle, &mut app.list_state, app.list_items.clone(), "Editors", false);
+                        render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     }
                 },
-                Screen::CommandList => todo!()
+                Tab::CommandList => todo!()
             }
         }
     }
@@ -161,6 +170,22 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     if matches!(app.dialogue.current, Dialogue::None) {
         render_help_text(app, frame, bottom);
     }
+}
+
+pub fn render_tabs(app: &mut App, frame: &mut Frame, area: Rect, tabs: Vec<&str>) {
+    let selected_tab = match app.tab {
+        Tab::ProjectList => 0,
+        Tab::EditorList => 1,
+        _ => 0
+    };
+
+    let tabs = Tabs::new(tabs)
+        .style(Color::White)
+        .highlight_style(Style::default().blue().on_black().bold())
+        .select(selected_tab)
+        .divider(symbols::line::VERTICAL)
+        .padding(" ", " ");
+    frame.render_widget(tabs, area);
 }
 
 fn wrapped_line_count(text: &str, width: u16) -> u16 {
@@ -327,16 +352,16 @@ fn render_list(frame: &mut Frame, area: Rect, list_state: &mut ListState, list_i
 }
 
 fn help_entries(app: &App) -> Vec<(&'static str, &'static str)> {
-    match app.screen {
-        Screen::ProjectList => match app.dialogue.current {
+    match app.tab {
+        Tab::ProjectList => match app.dialogue.current {
             Dialogue::None => vec![
                 ("j/k", "Navigate"),
+                ("h/l", "Switch Tabs"),
                 ("Enter", "Details"),
                 ("o", "Open"),
                 ("d", "Delete"),
                 ("D", "w/ Dir"),
                 ("c", "Create"),
-                ("e", "Editors"),
                 ("r", "Refresh"),
                 ("q", "Quit"),
             ],
@@ -358,14 +383,14 @@ fn help_entries(app: &App) -> Vec<(&'static str, &'static str)> {
             Dialogue::Info(_) => vec![("o", "Toggle Open After Create")],
             _ => vec![],
         },
-        Screen::EditorList => vec![
+        Tab::EditorList => vec![
             ("j/k", "Navigate"),
+            ("h/l", "Switch Tabs"),
             ("i", "Install"),
             ("d", "Uninstall"),
-            ("Esc", "Back"),
             ("q", "Quit"),
         ],
-        Screen::CommandList => vec![],
+        Tab::CommandList => vec![],
     }
 }
 
