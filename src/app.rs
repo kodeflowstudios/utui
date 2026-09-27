@@ -34,14 +34,14 @@ pub struct Tasks {
     pub login: Option<AsyncTask<Result<(bool, String), AppError>>>
 }
 
-pub enum Screen {
+pub enum Tab {
     ProjectList,
     EditorList,
     CommandList
 }
 
 pub struct App {
-    pub screen: Screen,
+    pub tab: Tab,
     pub list_state: ListState,
     pub selected_index: Option<usize>,
     pub input: InputHandler,
@@ -69,7 +69,7 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         Self {
-            screen: Screen::ProjectList,
+            tab: Tab::ProjectList,
             list_state: ListState::default().with_selected(Some(0)),
             selected_index: None,
             input: InputHandler::new(),
@@ -469,8 +469,8 @@ impl App {
             return false;
         }
         
-        match self.screen {
-            Screen::ProjectList => {
+        match self.tab {
+            Tab::ProjectList => {
                 match self.dialogue.current {
                     Dialogue::None => self.handle_main_key(key),
                     Dialogue::Input => self.handle_input_key(key),
@@ -495,7 +495,7 @@ impl App {
                     },
                 }
             },
-            Screen::EditorList => {
+            Tab::EditorList => {
                 match self.dialogue.current {
                     Dialogue::TimedInfo(_, _) => {
                         self.dialogue.current = Dialogue::None;
@@ -517,6 +517,12 @@ impl App {
             KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.move_selection(true)
             }
+            KeyCode::BackTab | KeyCode::Char('h') => {
+                self.switch_tab(true);
+            }
+            KeyCode::Tab | KeyCode::Char('l') => {
+                self.switch_tab(true);
+            }
             KeyCode::Char('k') | KeyCode::Up => self.move_selection(false),
             KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.move_selection(false)
@@ -529,8 +535,8 @@ impl App {
             KeyCode::Char('o') => self.open_selected_project(),
             KeyCode::Char('c') => self.open_create_dialogue(),
             KeyCode::Char('r') => self.refresh(),
-            KeyCode::Char('e') => {
-                self.screen = Screen::EditorList;
+            KeyCode::Char('2') => {
+                self.tab = Tab::EditorList;
                 self.refresh();
             },
             KeyCode::Esc => self.collapse_project(),
@@ -549,6 +555,12 @@ impl App {
             KeyCode::Char('k') | KeyCode::Up => self.move_selection(false),
             KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                 self.move_selection(false)
+            }
+            KeyCode::BackTab | KeyCode::Char('h') => {
+                self.switch_tab(true);
+            }
+            KeyCode::Tab | KeyCode::Char('l') => {
+                self.switch_tab(true);
             }
             KeyCode::Char('i') => {
                 if let Some((installed, version)) = self.list_state.selected()
@@ -571,10 +583,14 @@ impl App {
                     }
                 }
             },
-            KeyCode::Esc => {
-                self.screen = Screen::ProjectList;
+            KeyCode::Char('1') => {
+                self.tab = Tab::ProjectList;
                 self.refresh();
             },
+            // KeyCode::Char('3') => {
+            //     self.tab = Tab::CommandList;
+            //     self.refresh();
+            // },
             KeyCode::Enter if self.dialogue.selection != DialogueSelection::None => self.execute_selection(),
             KeyCode::Char('q') => return true,
             _ => {}
@@ -658,9 +674,9 @@ impl App {
 
     pub fn refresh(&mut self) {
         self.proj_expanded = false;
-        match self.screen {
-            Screen::ProjectList => self.refresh_projects(),
-            Screen::EditorList => self.refresh_editors(),
+        match self.tab {
+            Tab::ProjectList => self.refresh_projects(),
+            Tab::EditorList => self.refresh_editors(),
             _ => ()
         }
     }
@@ -704,6 +720,37 @@ impl App {
 
         self.dialogue.close();
         self.list_state.select_first();
+    }
+
+    pub fn switch_tab(&mut self, direction: bool) {
+        self.tab = match self.tab {
+            Tab::ProjectList => {
+                if direction {
+                    Tab::EditorList
+                }
+                else {
+                    Tab::EditorList
+                }
+            }
+            Tab::EditorList => {
+                if direction {
+                    Tab::ProjectList
+                }
+                else {
+                    Tab::ProjectList
+                }
+            }
+            _ => Tab::ProjectList
+            // Tab::CommandList => {
+            //     if direction {
+            //         Tab::ProjectList
+            //     }
+            //     else {
+            //         Tab::EditorList
+            //     }
+            // }
+        };
+        self.refresh();
     }
 
     pub fn prepare_input_lists(&mut self) {
@@ -1031,7 +1078,7 @@ impl App {
         }
 
         if let Some(index) = self.list_state.selected() &&
-            matches!(self.screen, Screen::ProjectList){
+            matches!(self.tab, Tab::ProjectList){
             let should_collapse = self.dialogue.current == Dialogue::None
                 && if next {
                     index < self.list_items.len() - 1
