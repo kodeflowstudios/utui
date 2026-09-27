@@ -356,12 +356,12 @@ fn help_entries(app: &App) -> Vec<(&'static str, &'static str)> {
         Tab::ProjectList => match app.dialogue.current {
             Dialogue::None => vec![
                 ("j/k", "Navigate"),
+                ("h/l", "Switch Tabs"),
                 ("Enter", "Details"),
                 ("o", "Open"),
                 ("d", "Delete"),
                 ("D", "w/ Dir"),
                 ("c", "Create"),
-                ("e", "Editors"),
                 ("r", "Refresh"),
                 ("q", "Quit"),
             ],
@@ -385,9 +385,9 @@ fn help_entries(app: &App) -> Vec<(&'static str, &'static str)> {
         },
         Tab::EditorList => vec![
             ("j/k", "Navigate"),
+            ("h/l", "Switch Tabs"),
             ("i", "Install"),
             ("d", "Uninstall"),
-            ("Esc", "Back"),
             ("q", "Quit"),
         ],
         Tab::CommandList => vec![],

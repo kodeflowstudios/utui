@@ -20,23 +20,27 @@ pub const HELP_GROUPS: &[HelpGroup] = &[
     HelpGroup {
         title: "Project List",
         entries: &[
-            HelpEntry { key: "j/k, Ctrl-n/p", desc: "Navigate",       detail: "Move the selection up or down the project list." },
+            HelpEntry { key: "j/k, Ctrl-n/p",  desc: "Navigate",       detail: "Move the selection up or down the project list." },
             HelpEntry { key: "Enter",          desc: "Details",        detail: "Expand or collapse details for the selected project." },
             HelpEntry { key: "o",              desc: "Open",           detail: "Open the selected project in Unity." },
             HelpEntry { key: "c",              desc: "Create",         detail: "Start the new project creation wizard." },
             HelpEntry { key: "d",              desc: "Delete",         detail: "Delete the selected project, keeping its files on disk." },
             HelpEntry { key: "D",              desc: "Delete w/ Dir",  detail: "Delete the selected project and its directory." },
-            HelpEntry { key: "e",              desc: "Editors",        detail: "Switch to the editor versions screen." },
+            HelpEntry { key: "2",              desc: "Editors",        detail: "Switch to the editor versions tab." },
+            HelpEntry { key: "h/l",            desc: "Switch Tabs",        detail: "Move to the next or previous tab." },
+            HelpEntry { key: "Shift-Tab/Tab",  desc: "Switch Tabs",        detail: "Move to the next or previous tab." },
             HelpEntry { key: "r",              desc: "Refresh",        detail: "Reload the project list from disk." },
         ],
     },
     HelpGroup {
         title: "Editor List",
         entries: &[
-            HelpEntry { key: "j/k, Ctrl-n/p", desc: "Navigate", detail: "Move the selection up or down the editor list." },
+            HelpEntry { key: "j/k, Ctrl-n/p",  desc: "Navigate", detail: "Move the selection up or down the editor list." },
             HelpEntry { key: "i",              desc: "Install",   detail: "Install the selected Unity editor version." },
             HelpEntry { key: "d",              desc: "Uninstall", detail: "Uninstall the selected Unity editor version." },
-            HelpEntry { key: "Esc",            desc: "Back",      detail: "Return to the project list." },
+            HelpEntry { key: "1",              desc: "Projects",        detail: "Switch to the projects list tab." },
+            HelpEntry { key: "h/l",            desc: "Switch Tabs",        detail: "Move to the next or previous tab." },
+            HelpEntry { key: "Shift-Tab/Tab",  desc: "Switch Tabs",        detail: "Move to the next or previous tab." },
         ],
     },
     HelpGroup {
