@@ -43,7 +43,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
         render_help_menu(frame, &mut app.help_state);
     }
     
-    let tabs = vec!["(1) Projects", "(2) Editors"];
+    let tabs = vec!["(1) Projects", "(2) Editors", "(3) Commands"];
     let tabs_width = tabs
         .iter()
         .map(|l| l.len() as u16 + 3)
@@ -162,7 +162,25 @@ pub fn render(frame: &mut Frame, app: &mut App) {
                         render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     }
                 },
-                Tab::CommandList => todo!()
+                Tab::CommandList => {
+                    if app.tasks.projects.is_some() {
+                        app.dialogue.current = Dialogue::Info(String::new());
+                    } else if app.list_items.is_empty() {
+                        let empty = Line::from_iter([
+                            Span::from(" No commands available...").bold(),
+                            Span::from(" press c to create a command."),
+                        ]);
+                        let block = Block::default()
+                            .borders(Borders::ALL)
+                            .border_type(BorderType::Rounded)
+                            .title("Commands");
+                        let paragraph = Paragraph::new(empty).left_aligned().block(block);
+                        frame.render_widget(paragraph, middle);
+                    } else {
+                        render_list(frame, middle, &mut app.list_state, app.list_items.clone(), "Commands", app.proj_expanded);
+                        render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
+                    }
+                }
             }
         }
     }

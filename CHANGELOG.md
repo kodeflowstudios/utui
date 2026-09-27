@@ -15,3 +15,13 @@
 
 ### Added or Changed
 - Changed main colours to blue
+
+## v1.0.7
+
+### Added or Changed
+- Added tabs
+
+## v1.1.0
+
+### Added or Changed
+- Added support for commands

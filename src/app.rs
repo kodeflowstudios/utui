@@ -518,7 +518,7 @@ impl App {
                 self.move_selection(true)
             }
             KeyCode::BackTab | KeyCode::Char('h') => {
-                self.switch_tab(true);
+                self.switch_tab(false);
             }
             KeyCode::Tab | KeyCode::Char('l') => {
                 self.switch_tab(true);
@@ -539,6 +539,10 @@ impl App {
                 self.tab = Tab::EditorList;
                 self.refresh();
             },
+            KeyCode::Char('3') => {
+                self.tab = Tab::CommandList;
+                self.refresh();
+            },
             KeyCode::Esc => self.collapse_project(),
             KeyCode::Char('q') => return true,
             _ => {}
@@ -557,7 +561,7 @@ impl App {
                 self.move_selection(false)
             }
             KeyCode::BackTab | KeyCode::Char('h') => {
-                self.switch_tab(true);
+                self.switch_tab(false);
             }
             KeyCode::Tab | KeyCode::Char('l') => {
                 self.switch_tab(true);
@@ -587,10 +591,10 @@ impl App {
                 self.tab = Tab::ProjectList;
                 self.refresh();
             },
-            // KeyCode::Char('3') => {
-            //     self.tab = Tab::CommandList;
-            //     self.refresh();
-            // },
+            KeyCode::Char('3') => {
+                self.tab = Tab::CommandList;
+                self.refresh();
+            },
             KeyCode::Enter if self.dialogue.selection != DialogueSelection::None => self.execute_selection(),
             KeyCode::Char('q') => return true,
             _ => {}
@@ -729,26 +733,25 @@ impl App {
                     Tab::EditorList
                 }
                 else {
-                    Tab::EditorList
+                    Tab::CommandList
                 }
             }
             Tab::EditorList => {
                 if direction {
-                    Tab::ProjectList
+                    Tab::CommandList
                 }
                 else {
                     Tab::ProjectList
                 }
             }
-            _ => Tab::ProjectList
-            // Tab::CommandList => {
-            //     if direction {
-            //         Tab::ProjectList
-            //     }
-            //     else {
-            //         Tab::EditorList
-            //     }
-            // }
+            Tab::CommandList => {
+                if direction {
+                    Tab::EditorList
+                }
+                else {
+                    Tab::ProjectList
+                }
+            }
         };
         self.refresh();
     }
