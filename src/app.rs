@@ -22,6 +22,7 @@ const FRAME_DELTA: u64 = 16;
 pub struct Tasks {
     pub projects: Option<AsyncTask<Result<(Vec<String>, Vec<Project>), AppError>>>,
     pub all_editors: Option<AsyncTask<Result<Vec<(bool, String)>, AppError>>>,
+    pub commands: Option<AsyncTask<Result<Vec<String>, AppError>>>,
     pub installed_editors: Option<AsyncTask<Result<Vec<String>, AppError>>>,
     pub editor_install: Option<AsyncTask<Result<(), AppError>>>,
     pub editor_uninstall: Option<AsyncTask<Result<(), AppError>>>,
@@ -50,6 +51,7 @@ pub struct App {
     pub list_items_buffer: Vec<String>,
     pub projects: Vec<Project>,
     pub all_editors: Option<Vec<(bool, String)>>,
+    pub commands: Vec<String>,
     pub installed_editors: Option<Vec<String>>,
     pub prev_editor_count: usize,
     pub templates: Option<Vec<Template>>,
@@ -78,6 +80,7 @@ impl App {
             list_items_buffer: Vec::new(),
             projects: Vec::new(),
             all_editors: None,
+            commands: Vec::new(),
             installed_editors: None,
             prev_editor_count: 0,
             templates: None,
@@ -717,6 +720,24 @@ impl App {
 
             if self.tasks.all_editors.is_none() {
                 self.tasks.all_editors = Some(AsyncTask::new(move || {
+                    uclone.list_editors()
+                }));
+            }
+        }
+
+        self.dialogue.close();
+        self.list_state.select_first();
+    }
+
+    pub fn refresh_commands(&mut self) {
+        self.list_items.clear();
+        self.commands.clear();
+
+        if let Some(unity) = &self.unity {
+            let uclone = unity.clone();
+
+            if self.tasks.commands.is_none() {
+                self.tasks.commands = Some(AsyncTask::new(move || {
                     uclone.list_editors()
                 }));
             }

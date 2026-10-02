@@ -76,6 +76,19 @@ impl UnityCLI {
         Ok(data.iter().filter_map(Project::from_json).collect())
     }
 
+    // pub fn list_commands(&self) -> Result<Vec<String>, AppError> {
+    //     let json = self.invoke(&["cmd", "--json"])?;
+    //     let data = json_data_array(&json)?;
+    //     Ok(data
+    //         .iter()
+    //         .filter_map(|entry| {
+    //             let version = entry.get("version").and_then(Value::as_str)?;
+    //             let installed = entry.get("location").is_some();
+    //             Some((installed, version.to_owned()))
+    //         })
+    //         .collect())
+    // }
+
     pub fn install_editor(&self, editor: &str) -> Result<(), AppError> {
         let output = self.raw(&["install", editor, "-y", "--resume", "--json"])?;
 
