@@ -1,11 +1,28 @@
+use std::io;
 use serde_json::Value;
-use crate::command::run_command;
 use crate::error::AppError;
 use crate::project::Project;
 use crate::template::Template;
+use std::process::{Command, Stdio};
 
 pub struct UnityCLI {
     binary: String,
+}
+
+pub fn run_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
+    let output = Command::new(cmd.trim())
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    if !stdout.is_empty() {
+        return Ok((true, stdout));
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    Ok((false, stderr))
 }
 
 impl UnityCLI {
@@ -76,18 +93,18 @@ impl UnityCLI {
         Ok(data.iter().filter_map(Project::from_json).collect())
     }
 
-    // pub fn list_commands(&self) -> Result<Vec<String>, AppError> {
-    //     let json = self.invoke(&["cmd", "--json"])?;
-    //     let data = json_data_array(&json)?;
-    //     Ok(data
-    //         .iter()
-    //         .filter_map(|entry| {
-    //             let version = entry.get("version").and_then(Value::as_str)?;
-    //             let installed = entry.get("location").is_some();
-    //             Some((installed, version.to_owned()))
-    //         })
-    //         .collect())
-    // }
+    pub fn list_commands(&self) -> Result<Vec<String>, AppError> {
+        let json = self.invoke(&["cmd", "--json"])?;
+        let data = json_data_array(&json)?;
+        Ok(data
+            .iter()
+            .filter_map(|entry| {
+                let version = entry.get("version").and_then(Value::as_str)?;
+                let installed = entry.get("location").is_some();
+                Some((installed, version.to_owned()))
+            })
+            .collect())
+    }
 
     pub fn install_editor(&self, editor: &str) -> Result<(), AppError> {
         let output = self.raw(&["install", editor, "-y", "--resume", "--json"])?;

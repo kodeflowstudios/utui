@@ -738,7 +738,7 @@ impl App {
 
             if self.tasks.commands.is_none() {
                 self.tasks.commands = Some(AsyncTask::new(move || {
-                    uclone.list_editors()
+                    uclone.list_commands()
                 }));
             }
         }

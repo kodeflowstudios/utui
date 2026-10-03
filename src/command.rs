@@ -1,18 +1,22 @@
-use std::io;
-use std::process::{Command, Stdio};
+pub enum ParamValue {
+    Int(i64),
+    Float(f64),
+    Bool(bool),
+    String(String)
+}
 
-pub fn run_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
-    let output = Command::new(cmd.trim())
-        .args(args)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()?;
+pub struct Parameter {
+    name: String,
+    description: String,
+    param_type: String,
+    required: bool,
+    default_value: Option<ParamValue>
+}
 
-    let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
-    if !stdout.is_empty() {
-        return Ok((true, stdout));
-    }
-
-    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
-    Ok((false, stderr))
+pub struct Command {
+    name: String,
+    description: String,
+    tags: Vec<String>,
+    package: String,
+    parameters: Vec<Parameter>,
 }
