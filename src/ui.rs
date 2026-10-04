@@ -139,6 +139,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
                             .title("Projects");
                         let paragraph = Paragraph::new(empty).left_aligned().block(block);
                         frame.render_widget(paragraph, middle);
+                        render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     } else {
                         render_list(frame, middle, &mut app.list_state, app.list_items.clone(), "Projects", app.proj_expanded);
                         render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
@@ -157,18 +158,19 @@ pub fn render(frame: &mut Frame, app: &mut App) {
                             .title("Editors");
                         let paragraph = Paragraph::new(empty).left_aligned().block(block);
                         frame.render_widget(paragraph, middle);
+                        render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     } else {
                         render_list(frame, middle, &mut app.list_state, app.list_items.clone(), "Editors", false);
                         render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     }
                 },
                 Tab::CommandList => {
-                    if app.tasks.projects.is_some() {
+                    if app.tasks.commands.is_some() || app.tasks.pipeline_install.is_some() {
                         app.dialogue.current = Dialogue::Info(String::new());
                     } else if app.list_items.is_empty() {
                         let empty = Line::from_iter([
-                            Span::from(" No commands available...").bold(),
-                            Span::from(" press c to create a command."),
+                            Span::from(" No commands found...").bold(),
+                            Span::from(" open a project then press r to retry."),
                         ]);
                         let block = Block::default()
                             .borders(Borders::ALL)
@@ -176,6 +178,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
                             .title("Commands");
                         let paragraph = Paragraph::new(empty).left_aligned().block(block);
                         frame.render_widget(paragraph, middle);
+                        render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
                     } else {
                         render_list(frame, middle, &mut app.list_state, app.list_items.clone(), "Commands", app.proj_expanded);
                         render_tabs(app, frame, top.centered(Constraint::Length(tabs_width), Constraint::Length(1)), tabs);
@@ -194,7 +197,7 @@ pub fn render_tabs(app: &mut App, frame: &mut Frame, area: Rect, tabs: Vec<&str>
     let selected_tab = match app.tab {
         Tab::ProjectList => 0,
         Tab::EditorList => 1,
-        _ => 0
+        Tab::CommandList => 2,
     };
 
     let tabs = Tabs::new(tabs)
@@ -408,7 +411,12 @@ fn help_entries(app: &App) -> Vec<(&'static str, &'static str)> {
             ("d", "Uninstall"),
             ("q", "Quit"),
         ],
-        Tab::CommandList => vec![],
+        Tab::CommandList => vec![
+            ("j/k", "Navigate"),
+            ("h/l", "Switch Tabs"),
+            ("r", "Refresh"),
+            ("q", "Quit"),
+        ],
     }
 }
 

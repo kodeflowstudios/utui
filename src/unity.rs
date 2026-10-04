@@ -3,14 +3,16 @@ use serde_json::Value;
 use crate::error::AppError;
 use crate::project::Project;
 use crate::template::Template;
-use std::process::{Command, Stdio};
+use crate::command::Command;
+use std::process::{Stdio};
+use std::process::Command as Cmd;
 
 pub struct UnityCLI {
     binary: String,
 }
 
 pub fn run_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
-    let output = Command::new(cmd.trim())
+    let output = Cmd::new(cmd.trim())
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -93,17 +95,36 @@ impl UnityCLI {
         Ok(data.iter().filter_map(Project::from_json).collect())
     }
 
-    pub fn list_commands(&self) -> Result<Vec<String>, AppError> {
-        let json = self.invoke(&["cmd", "--json"])?;
-        let data = json_data_array(&json)?;
-        Ok(data
-            .iter()
-            .filter_map(|entry| {
-                let version = entry.get("version").and_then(Value::as_str)?;
-                let installed = entry.get("location").is_some();
-                Some((installed, version.to_owned()))
+    pub fn install_pipeline(&self) -> Result<(bool, Option<String>), AppError> {
+        let json = self.invoke(&["pipeline", "install", "--json"])?;
+
+        let success = json.get("success").and_then(Value::as_bool).unwrap_or(false);
+        if success {
+            return Ok((true, None));
+        }
+
+        let error = json
+            .pointer("/errors/0")
+            .map(|e| {
+                let code = e.get("code").and_then(Value::as_str).unwrap_or("UNKNOWN");
+                let message = e
+                    .get("message")
+                    .and_then(Value::as_str)
+                    .and_then(|m| m.lines().next())
+                    .unwrap_or("pipeline install failed");
+                format!("{code}: {message}")
             })
-            .collect())
+        .unwrap_or_else(|| "UNKNOWN: pipeline install failed".to_string());
+
+        Ok((false, Some(error)))
+    }
+
+    pub fn list_commands(&self) -> Result<Vec<Command>, AppError> {
+        let json = self.invoke(&["cmd", "--json"])?;
+        Ok(json
+            .pointer("/data/commands")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default())
     }
 
     pub fn install_editor(&self, editor: &str) -> Result<(), AppError> {
