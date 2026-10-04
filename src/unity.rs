@@ -11,7 +11,7 @@ pub struct UnityCLI {
     binary: String,
 }
 
-pub fn run_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
+pub fn run_shell_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
     let output = Cmd::new(cmd.trim())
         .args(args)
         .stdout(Stdio::piped())
@@ -29,7 +29,7 @@ pub fn run_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
 
 impl UnityCLI {
     pub fn discover() -> Result<Self, AppError> {
-        match run_command("which", &["unity"]) {
+        match run_shell_command("which", &["unity"]) {
             Ok((true, path)) => Ok(Self {
                 binary: path.trim().to_string(),
             }),
@@ -115,6 +115,30 @@ impl UnityCLI {
                 format!("{code}: {message}")
             })
         .unwrap_or_else(|| "UNKNOWN: pipeline install failed".to_string());
+
+        Ok((false, Some(error)))
+    }
+
+    pub fn run_command(&self, command: String) -> Result<(bool, Option<String>), AppError> {
+        let json = self.invoke(&["cmd", &command, "--json"])?;
+
+        let success = json.get("success").and_then(Value::as_bool).unwrap_or(false);
+        if success {
+            return Ok((true, None));
+        }
+
+        let error = json
+            .pointer("/errors/0")
+            .map(|e| {
+                let code = e.get("code").and_then(Value::as_str).unwrap_or("UNKNOWN");
+                let message = e
+                    .get("message")
+                    .and_then(Value::as_str)
+                    .and_then(|m| m.lines().next())
+                    .unwrap_or("failed to run command");
+                format!("{code}: {message}")
+            })
+        .unwrap_or_else(|| "UNKNOWN: failed to run command".to_string());
 
         Ok((false, Some(error)))
     }
@@ -232,7 +256,7 @@ impl UnityCLI {
         parse_cli_response(&message_text)?;
 
         if remove_files {
-            if let Err(err) = run_command("rm", &["-r", "-f", &project.path]) {
+            if let Err(err) = run_shell_command("rm", &["-r", "-f", &project.path]) {
                 return Err(AppError::Command(err));
             }
         }
@@ -281,7 +305,7 @@ impl UnityCLI {
     }
 
     fn raw(&self, args: &[&str]) -> Result<String, AppError> {
-        match run_command(&self.binary, args) {
+        match run_shell_command(&self.binary, args) {
             Ok((true, stdout)) => Ok(stdout),
             Ok((false, err)) => Err(AppError::Unity(err)),
             Err(err) => Err(err.into()),

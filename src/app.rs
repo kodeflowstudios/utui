@@ -33,6 +33,7 @@ pub struct Tasks {
     pub proj_create: Option<AsyncTask<Result<(), AppError>>>,
     pub proj_open: Option<AsyncTask<Result<(), AppError>>>,
     pub proj_delete: Option<AsyncTask<Result<(), AppError>>>,
+    pub run_command: Option<AsyncTask<Result<(bool, Option<String>), AppError>>>,
     pub check_auth: Option<AsyncTask<Result<(bool, String), AppError>>>,
     pub login: Option<AsyncTask<Result<(bool, String), AppError>>>
 }
@@ -473,6 +474,27 @@ impl App {
                 },
             );
 
+            // run command
+            poll_task(
+                &mut app,
+                |app| &mut app.tasks.run_command,
+                |app| {
+                    if matches!(app.dialogue.current, Dialogue::Info(_)) {
+                        app.update_loading(String::from("Running commands..."));
+                    }
+                },
+                |app, result| match result {
+                    Ok(_) => {
+                        app.dialogue.current = Dialogue::TimedInfo(
+                            String::from("Command ran successfully!"),
+                            Instant::now() + Duration::from_secs(3),
+                        );
+                        app.dialogue.current = Dialogue::None;
+                    }
+                    Err(err) => app.dialogue.current = Dialogue::Error(err.to_string()),
+                },
+            );
+
             if let Dialogue::TimedInfo(_, end_time) = app.dialogue.current {
                 if Instant::now() >= end_time {
                     app.dialogue.current = Dialogue::None;
@@ -631,9 +653,7 @@ impl App {
         }
         match key.code {
             KeyCode::Char('r') => self.install_pipeline(),
-            KeyCode::Enter if self.dialogue.selection != DialogueSelection::None => {
-                self.execute_selection()
-            }
+            KeyCode::Enter => self.run_command(),
             _ => {}
         }
         false
@@ -779,6 +799,23 @@ impl App {
 
         self.dialogue.close();
         self.list_state.select_first();
+    }
+
+    pub fn run_command(&mut self) {
+        if let Some(unity) = &self.unity {
+            let uclone = unity.clone();
+
+            if let Some(name) = self
+                .list_state
+                    .selected()
+                    .and_then(|idx| self.commands.get(idx))
+                    .map(|c| c.name.clone()) && self.tasks.run_command.is_none()
+            {
+                self.tasks.run_command = Some(AsyncTask::new(move || {
+                    uclone.run_command(name)
+                }));
+            }
+        }
     }
 
     pub fn refresh_commands(&mut self) {
