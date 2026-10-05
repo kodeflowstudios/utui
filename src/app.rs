@@ -445,17 +445,14 @@ impl App {
                         app.refresh_commands();
                     },
                     Ok((false, Some(err))) => {
-                        app.dialogue.current = Dialogue::ConfirmAction(
-                            err, 
-                            Action::None
-                        );
+                        app.dialogue.current = Dialogue::Error(err);
                     },
                     Err(err) => app.dialogue.current = Dialogue::Error(err.to_string()),
                     _ => (),
                 },
             );
 
-            // commands
+            // list commands
             poll_task(
                 &mut app,
                 |app| &mut app.tasks.commands,
@@ -480,18 +477,21 @@ impl App {
                 |app| &mut app.tasks.run_command,
                 |app| {
                     if matches!(app.dialogue.current, Dialogue::Info(_)) {
-                        app.update_loading(String::from("Running commands..."));
+                        app.update_loading(String::from("Running command..."));
                     }
                 },
                 |app, result| match result {
-                    Ok(_) => {
+                    Ok((true, None)) => {
                         app.dialogue.current = Dialogue::TimedInfo(
                             String::from("Command ran successfully!"),
-                            Instant::now() + Duration::from_secs(3),
+                            Instant::now() + Duration::from_secs(1),
                         );
-                        app.dialogue.current = Dialogue::None;
-                    }
+                    },
+                    Ok((false, Some(err))) => {
+                        app.dialogue.current = Dialogue::Error(err);
+                    },
                     Err(err) => app.dialogue.current = Dialogue::Error(err.to_string()),
+                    _ => ()
                 },
             );
 
@@ -802,20 +802,27 @@ impl App {
     }
 
     pub fn run_command(&mut self) {
-        if let Some(unity) = &self.unity {
-            let uclone = unity.clone();
-
-            if let Some(name) = self
-                .list_state
-                    .selected()
-                    .and_then(|idx| self.commands.get(idx))
-                    .map(|c| c.name.clone()) && self.tasks.run_command.is_none()
-            {
-                self.tasks.run_command = Some(AsyncTask::new(move || {
-                    uclone.run_command(name)
-                }));
-            }
+        if self.tasks.run_command.is_some() {
+            return;
         }
+
+        let Some(unity) = self.unity.clone() else { return };
+
+        let Some(command) = self
+            .list_state
+            .selected()
+            .and_then(|idx| self.commands.get(idx))
+            .cloned()
+        else {
+            return;
+        };
+
+        // TODO: Guard against null required params
+        self.tasks.run_command = Some(AsyncTask::new(move || {
+            unity.run_command(command.name)
+        }));
+
+        self.dialogue.current = Dialogue::Info(String::new());
     }
 
     pub fn refresh_commands(&mut self) {

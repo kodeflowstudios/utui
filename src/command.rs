@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use serde_json::Value;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum ParamValue {
     Int(i64),
@@ -10,7 +10,8 @@ pub enum ParamValue {
     String(String),
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Parameter {
     pub name: String,
     #[serde(default)]
@@ -23,7 +24,7 @@ pub struct Parameter {
     pub default_value: Option<ParamValue>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Command {
     pub name: String,
     #[serde(default)]

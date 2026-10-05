@@ -122,8 +122,13 @@ impl UnityCLI {
     pub fn run_command(&self, command: String) -> Result<(bool, Option<String>), AppError> {
         let json = self.invoke(&["cmd", &command, "--json"])?;
 
-        let success = json.get("success").and_then(Value::as_bool).unwrap_or(false);
-        if success {
+        let outer = json.get("success").and_then(Value::as_bool).unwrap_or(false);
+        let inner = json
+            .pointer("/data/success")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+
+        if outer && inner {
             return Ok((true, None));
         }
 
