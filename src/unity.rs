@@ -1,16 +1,35 @@
+use std::io;
 use serde_json::Value;
-use crate::command::run_command;
 use crate::error::AppError;
 use crate::project::Project;
 use crate::template::Template;
+use crate::command::Command;
+use std::process::{Stdio};
+use std::process::Command as Cmd;
 
 pub struct UnityCLI {
     binary: String,
 }
 
+pub fn run_shell_command(cmd: &str, args: &[&str]) -> io::Result<(bool, String)> {
+    let output = Cmd::new(cmd.trim())
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+    if !stdout.is_empty() {
+        return Ok((true, stdout));
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+    Ok((false, stderr))
+}
+
 impl UnityCLI {
     pub fn discover() -> Result<Self, AppError> {
-        match run_command("which", &["unity"]) {
+        match run_shell_command("which", &["unity"]) {
             Ok((true, path)) => Ok(Self {
                 binary: path.trim().to_string(),
             }),
@@ -76,18 +95,66 @@ impl UnityCLI {
         Ok(data.iter().filter_map(Project::from_json).collect())
     }
 
-    // pub fn list_commands(&self) -> Result<Vec<String>, AppError> {
-    //     let json = self.invoke(&["cmd", "--json"])?;
-    //     let data = json_data_array(&json)?;
-    //     Ok(data
-    //         .iter()
-    //         .filter_map(|entry| {
-    //             let version = entry.get("version").and_then(Value::as_str)?;
-    //             let installed = entry.get("location").is_some();
-    //             Some((installed, version.to_owned()))
-    //         })
-    //         .collect())
-    // }
+    pub fn install_pipeline(&self) -> Result<(bool, Option<String>), AppError> {
+        let json = self.invoke(&["pipeline", "install", "--json"])?;
+
+        let success = json.get("success").and_then(Value::as_bool).unwrap_or(false);
+        if success {
+            return Ok((true, None));
+        }
+
+        let error = json
+            .pointer("/errors/0")
+            .map(|e| {
+                let code = e.get("code").and_then(Value::as_str).unwrap_or("UNKNOWN");
+                let message = e
+                    .get("message")
+                    .and_then(Value::as_str)
+                    .and_then(|m| m.lines().next())
+                    .unwrap_or("pipeline install failed");
+                format!("{code}: {message}")
+            })
+        .unwrap_or_else(|| "UNKNOWN: pipeline install failed".to_string());
+
+        Ok((false, Some(error)))
+    }
+
+    pub fn run_command(&self, command: String) -> Result<(bool, Option<String>), AppError> {
+        let json = self.invoke(&["cmd", &command, "--json"])?;
+
+        let outer = json.get("success").and_then(Value::as_bool).unwrap_or(false);
+        let inner = json
+            .pointer("/data/success")
+            .and_then(Value::as_bool)
+            .unwrap_or(true);
+
+        if outer && inner {
+            return Ok((true, None));
+        }
+
+        let error = json
+            .pointer("/errors/0")
+            .map(|e| {
+                let code = e.get("code").and_then(Value::as_str).unwrap_or("UNKNOWN");
+                let message = e
+                    .get("message")
+                    .and_then(Value::as_str)
+                    .and_then(|m| m.lines().next())
+                    .unwrap_or("failed to run command");
+                format!("{code}: {message}")
+            })
+        .unwrap_or_else(|| "UNKNOWN: failed to run command".to_string());
+
+        Ok((false, Some(error)))
+    }
+
+    pub fn list_commands(&self) -> Result<Vec<Command>, AppError> {
+        let json = self.invoke(&["cmd", "--json"])?;
+        Ok(json
+            .pointer("/data/commands")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default())
+    }
 
     pub fn install_editor(&self, editor: &str) -> Result<(), AppError> {
         let output = self.raw(&["install", editor, "-y", "--resume", "--json"])?;
@@ -194,7 +261,7 @@ impl UnityCLI {
         parse_cli_response(&message_text)?;
 
         if remove_files {
-            if let Err(err) = run_command("rm", &["-r", "-f", &project.path]) {
+            if let Err(err) = run_shell_command("rm", &["-r", "-f", &project.path]) {
                 return Err(AppError::Command(err));
             }
         }
@@ -243,7 +310,7 @@ impl UnityCLI {
     }
 
     fn raw(&self, args: &[&str]) -> Result<String, AppError> {
-        match run_command(&self.binary, args) {
+        match run_shell_command(&self.binary, args) {
             Ok((true, stdout)) => Ok(stdout),
             Ok((false, err)) => Err(AppError::Unity(err)),
             Err(err) => Err(err.into()),

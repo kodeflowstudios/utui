@@ -6,6 +6,7 @@ use std::fs;
 use std::time::{Duration, Instant};
 use std::sync::Arc;
 
+use crate::command::Command;
 use crate::dialogue::{Action, Dialogue, DialogueSelection, DialogueState};
 use crate::error::AppError;
 use crate::help::HelpState;
@@ -22,7 +23,8 @@ const FRAME_DELTA: u64 = 16;
 pub struct Tasks {
     pub projects: Option<AsyncTask<Result<(Vec<String>, Vec<Project>), AppError>>>,
     pub all_editors: Option<AsyncTask<Result<Vec<(bool, String)>, AppError>>>,
-    pub commands: Option<AsyncTask<Result<Vec<String>, AppError>>>,
+    pub commands: Option<AsyncTask<Result<Vec<Command>, AppError>>>,
+    pub pipeline_install: Option<AsyncTask<Result<(bool, Option<String>), AppError>>>,
     pub installed_editors: Option<AsyncTask<Result<Vec<String>, AppError>>>,
     pub editor_install: Option<AsyncTask<Result<(), AppError>>>,
     pub editor_uninstall: Option<AsyncTask<Result<(), AppError>>>,
@@ -31,10 +33,12 @@ pub struct Tasks {
     pub proj_create: Option<AsyncTask<Result<(), AppError>>>,
     pub proj_open: Option<AsyncTask<Result<(), AppError>>>,
     pub proj_delete: Option<AsyncTask<Result<(), AppError>>>,
+    pub run_command: Option<AsyncTask<Result<(bool, Option<String>), AppError>>>,
     pub check_auth: Option<AsyncTask<Result<(bool, String), AppError>>>,
     pub login: Option<AsyncTask<Result<(bool, String), AppError>>>
 }
 
+#[derive(Clone, Copy, PartialEq)]
 pub enum Tab {
     ProjectList,
     EditorList,
@@ -51,7 +55,7 @@ pub struct App {
     pub list_items_buffer: Vec<String>,
     pub projects: Vec<Project>,
     pub all_editors: Option<Vec<(bool, String)>>,
-    pub commands: Vec<String>,
+    pub commands: Vec<Command>,
     pub installed_editors: Option<Vec<String>>,
     pub prev_editor_count: usize,
     pub templates: Option<Vec<Template>>,
@@ -426,6 +430,71 @@ impl App {
                 },
             );
 
+            // pipeline install
+            poll_task(
+                &mut app,
+                |app| &mut app.tasks.pipeline_install,
+                |app| {
+                    if matches!(app.dialogue.current, Dialogue::Info(_)) {
+                        app.update_loading(String::from("Verifying pipeline..."));
+                    }
+                },
+                |app, result| match result {
+                    Ok((true, None)) => {
+                        app.dialogue.current = Dialogue::None;
+                        app.refresh_commands();
+                    },
+                    Ok((false, Some(err))) => {
+                        app.dialogue.current = Dialogue::Error(err);
+                    },
+                    Err(err) => app.dialogue.current = Dialogue::Error(err.to_string()),
+                    _ => (),
+                },
+            );
+
+            // list commands
+            poll_task(
+                &mut app,
+                |app| &mut app.tasks.commands,
+                |app| {
+                    if matches!(app.dialogue.current, Dialogue::Info(_)) {
+                        app.update_loading(String::from("Loading commands..."));
+                    }
+                },
+                |app, result| match result {
+                    Ok(commands) => {
+                        app.list_items = commands.iter().map(|c| c.name.clone()).collect();
+                        app.commands = commands;
+                        app.dialogue.current = Dialogue::None;
+                    }
+                    Err(err) => app.dialogue.current = Dialogue::Error(err.to_string()),
+                },
+            );
+
+            // run command
+            poll_task(
+                &mut app,
+                |app| &mut app.tasks.run_command,
+                |app| {
+                    if matches!(app.dialogue.current, Dialogue::Info(_)) {
+                        app.update_loading(String::from("Running command..."));
+                    }
+                },
+                |app, result| match result {
+                    Ok((true, None)) => {
+                        app.dialogue.current = Dialogue::TimedInfo(
+                            String::from("Command ran successfully!"),
+                            Instant::now() + Duration::from_secs(1),
+                        );
+                    },
+                    Ok((false, Some(err))) => {
+                        app.dialogue.current = Dialogue::Error(err);
+                    },
+                    Err(err) => app.dialogue.current = Dialogue::Error(err.to_string()),
+                    _ => ()
+                },
+            );
+
             if let Dialogue::TimedInfo(_, end_time) = app.dialogue.current {
                 if Instant::now() >= end_time {
                     app.dialogue.current = Dialogue::None;
@@ -471,65 +540,66 @@ impl App {
             self.show_help = true;
             return false;
         }
-        
-        match self.tab {
-            Tab::ProjectList => {
-                match self.dialogue.current {
-                    Dialogue::None => self.handle_main_key(key),
-                    Dialogue::Input => self.handle_input_key(key),
-                    Dialogue::DeleteConfirm { .. } | Dialogue::Error(_) |
-                        Dialogue::Confirm(_) | Dialogue::ConfirmAction(_, _) => self.handle_dialogue_key(key),
-                    Dialogue::Info(_) => {
-                        if key.code == KeyCode::Char('o') {
-                            self.open_after_creation = !self.open_after_creation;
-                        }
-                        self.handle_dialogue_key(key)
-                    },
-                    Dialogue::TimedInfo(_, _) => {
-                        self.dialogue.current = Dialogue::None;
-                        if matches!(self.dialogue.return_to, Dialogue::None) {
-                            self.refresh();
-                        }
-                        false
-                    },
-                    _ => {
-                        if key.code == KeyCode::Char('q') { true }
-                        else { false }
-                    },
-                }
+
+        match self.dialogue.current {
+            Dialogue::None => match self.tab {
+                Tab::ProjectList => self.handle_project_list_key(key),
+                Tab::EditorList => self.handle_editor_list_key(key),
+                Tab::CommandList => self.handle_command_list_key(key),
             },
-            Tab::EditorList => {
-                match self.dialogue.current {
-                    Dialogue::TimedInfo(_, _) => {
-                        self.dialogue.current = Dialogue::None;
-                        if matches!(self.dialogue.return_to, Dialogue::None) {
-                            self.refresh();
-                        }
-                        false
-                    },
-                    _ => self.handle_editor_list_key(key)
+            Dialogue::Input => self.handle_input_key(key),
+            Dialogue::DeleteConfirm { .. }
+                | Dialogue::Error(_)
+                | Dialogue::Confirm(_)
+                | Dialogue::ConfirmAction(_, _) => self.handle_dialogue_key(key),
+            Dialogue::Info(_) => {
+                if key.code == KeyCode::Char('o') {
+                    self.open_after_creation = !self.open_after_creation;
                 }
-            },
-            _ => false
+                if key.code == KeyCode::Char('q') {
+                    return true;
+                }
+                self.handle_dialogue_key(key)
+            }
+            Dialogue::TimedInfo(_, _) => {
+                self.dialogue.current = Dialogue::None;
+                if matches!(self.dialogue.return_to, Dialogue::None) {
+                    self.refresh();
+                }
+                false
+            }
+            _ => key.code == KeyCode::Char('q'),
         }
     }
 
-    fn handle_main_key(&mut self, key: KeyEvent) -> bool {
+    fn handle_common_list_key(&mut self, key: KeyEvent) -> Option<bool> {
+        let ctrl = key.modifiers.contains(KeyModifiers::CONTROL);
         match key.code {
             KeyCode::Char('j') | KeyCode::Down => self.move_selection(true),
-            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.move_selection(true)
-            }
-            KeyCode::BackTab | KeyCode::Char('h') => {
-                self.switch_tab(false);
-            }
-            KeyCode::Tab | KeyCode::Char('l') => {
-                self.switch_tab(true);
-            }
+            KeyCode::Char('n') if ctrl => self.move_selection(true),
             KeyCode::Char('k') | KeyCode::Up => self.move_selection(false),
-            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.move_selection(false)
-            }
+            KeyCode::Char('p') if ctrl => self.move_selection(false),
+            KeyCode::Char('h') | KeyCode::BackTab => self.switch_tab(false),
+            KeyCode::Char('l') | KeyCode::Tab => self.switch_tab(true),
+            KeyCode::Char('1') => self.go_to_tab(Tab::ProjectList),
+            KeyCode::Char('2') => self.go_to_tab(Tab::EditorList),
+            KeyCode::Char('3') => self.go_to_tab(Tab::CommandList),
+            KeyCode::Char('q') => return Some(true),
+            _ => return None,
+        }
+        Some(false)
+    }
+
+    fn go_to_tab(&mut self, tab: Tab) {
+        self.tab = tab;
+        self.refresh();
+    }
+
+    fn handle_project_list_key(&mut self, key: KeyEvent) -> bool {
+        if let Some(quit) = self.handle_common_list_key(key) {
+            return quit;
+        }
+        match key.code {
             KeyCode::Enter => self.toggle_project_details(),
             KeyCode::Char('D') | KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::SHIFT) => {
                 self.open_delete_dialogue(true)
@@ -538,37 +608,17 @@ impl App {
             KeyCode::Char('o') => self.open_selected_project(),
             KeyCode::Char('c') => self.open_create_dialogue(),
             KeyCode::Char('r') => self.refresh(),
-            KeyCode::Char('2') => {
-                self.tab = Tab::EditorList;
-                self.refresh();
-            },
-            KeyCode::Char('3') => {
-                self.tab = Tab::CommandList;
-                self.refresh();
-            },
             KeyCode::Esc => self.collapse_project(),
-            KeyCode::Char('q') => return true,
             _ => {}
         }
         false
     }
 
     fn handle_editor_list_key(&mut self, key: KeyEvent) -> bool {
+        if let Some(quit) = self.handle_common_list_key(key) {
+            return quit;
+        }
         match key.code {
-            KeyCode::Char('j') | KeyCode::Down => self.move_selection(true),
-            KeyCode::Char('n') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.move_selection(true)
-            }
-            KeyCode::Char('k') | KeyCode::Up => self.move_selection(false),
-            KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                self.move_selection(false)
-            }
-            KeyCode::BackTab | KeyCode::Char('h') => {
-                self.switch_tab(false);
-            }
-            KeyCode::Tab | KeyCode::Char('l') => {
-                self.switch_tab(true);
-            }
             KeyCode::Char('i') => {
                 if let Some((installed, version)) = self.list_state.selected()
                     .and_then(|idx| self.all_editors.as_ref()?.get(idx))
@@ -579,7 +629,6 @@ impl App {
                     }
                 }
             }
-            // KeyCode::Char('m') => todo!("manage editor version modules"),
             KeyCode::Char('d') => {
                 if let Some((installed, version)) = self.list_state.selected()
                     .and_then(|idx| self.all_editors.as_ref()?.get(idx))
@@ -589,17 +638,22 @@ impl App {
                         self.uninstall_editor(version);
                     }
                 }
-            },
-            KeyCode::Char('1') => {
-                self.tab = Tab::ProjectList;
-                self.refresh();
-            },
-            KeyCode::Char('3') => {
-                self.tab = Tab::CommandList;
-                self.refresh();
-            },
-            KeyCode::Enter if self.dialogue.selection != DialogueSelection::None => self.execute_selection(),
-            KeyCode::Char('q') => return true,
+            }
+            KeyCode::Enter if self.dialogue.selection != DialogueSelection::None => {
+                self.execute_selection()
+            }
+            _ => {}
+        }
+        false
+    }
+
+    fn handle_command_list_key(&mut self, key: KeyEvent) -> bool {
+        if let Some(quit) = self.handle_common_list_key(key) {
+            return quit;
+        }
+        match key.code {
+            KeyCode::Char('r') => self.install_pipeline(),
+            KeyCode::Enter => self.run_command(),
             _ => {}
         }
         false
@@ -624,13 +678,13 @@ impl App {
             KeyCode::Char('v')
                 if key.modifiers.contains(KeyModifiers::CONTROL)
                     || key.modifiers.contains(KeyModifiers::META) =>
-            {
-                self.paste_clipboard();
-            }
+                {
+                    self.paste_clipboard();
+                }
             KeyCode::Esc => {
                 self.dialogue.selection = DialogueSelection::Cancel;
                 self.execute_selection();
-            }
+                }
             _ => {}
         }
         false
@@ -684,7 +738,7 @@ impl App {
         match self.tab {
             Tab::ProjectList => self.refresh_projects(),
             Tab::EditorList => self.refresh_editors(),
-            _ => ()
+            Tab::CommandList => self.install_pipeline(),
         }
     }
 
@@ -729,6 +783,48 @@ impl App {
         self.list_state.select_first();
     }
 
+    pub fn install_pipeline(&mut self) {
+        self.list_items.clear();
+        self.commands.clear();
+
+        if let Some(unity) = &self.unity {
+            let uclone = unity.clone();
+
+            if self.tasks.pipeline_install.is_none() {
+                self.tasks.pipeline_install = Some(AsyncTask::new(move || {
+                    uclone.install_pipeline()
+                }));
+            }
+        }
+
+        self.dialogue.close();
+        self.list_state.select_first();
+    }
+
+    pub fn run_command(&mut self) {
+        if self.tasks.run_command.is_some() {
+            return;
+        }
+
+        let Some(unity) = self.unity.clone() else { return };
+
+        let Some(command) = self
+            .list_state
+            .selected()
+            .and_then(|idx| self.commands.get(idx))
+            .cloned()
+        else {
+            return;
+        };
+
+        // TODO: Guard against null required params
+        self.tasks.run_command = Some(AsyncTask::new(move || {
+            unity.run_command(command.name)
+        }));
+
+        self.dialogue.current = Dialogue::Info(String::new());
+    }
+
     pub fn refresh_commands(&mut self) {
         self.list_items.clear();
         self.commands.clear();
@@ -738,7 +834,7 @@ impl App {
 
             if self.tasks.commands.is_none() {
                 self.tasks.commands = Some(AsyncTask::new(move || {
-                    uclone.list_editors()
+                    uclone.list_commands()
                 }));
             }
         }
@@ -985,6 +1081,7 @@ impl App {
             },
             Dialogue::ConfirmAction(_, action) => {
                 match action {
+                    Action::None => self.reset_after_dialogue(),
                     Action::Login => {
                         if matches!(self.dialogue.selection, DialogueSelection::Ok) {
                             self.login()
@@ -992,6 +1089,15 @@ impl App {
                         else if matches!(self.dialogue.selection, DialogueSelection::Cancel) {
                             self.declined_login = true;
                             self.reset_after_dialogue();
+                        }
+                    },
+                    Action::Return(tab) => {
+                        if matches!(self.dialogue.selection, DialogueSelection::Ok) {
+                            self.go_to_tab(tab);
+                            self.reset_after_dialogue();
+                        }
+                        else if matches!(self.dialogue.selection, DialogueSelection::Cancel) {
+                            self.declined_login = true;
                         }
                     },
                     _ => ()

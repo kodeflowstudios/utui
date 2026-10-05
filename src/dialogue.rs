@@ -1,12 +1,13 @@
 use std::time::Instant;
 
-use crate::project::Project;
+use crate::{app::Tab, project::Project};
 
 #[derive(Clone, Copy, Default, PartialEq)]
 pub enum Action {
     #[default]
     None,
-    Login
+    Login,
+    Return(Tab)
 }
 
 #[derive(Clone, Default, PartialEq)]
